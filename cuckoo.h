@@ -19,7 +19,7 @@ private:
     // class variables
     Bucket<bucket_size> buckets[num_buckets];  // Array of buckets
     uint32_t curr_size = 0;
-    static const uint32_t max_kicks = 5000;
+    static const uint32_t max_kicks = 500;
 
     // bit masks
     const uint32_t HASH_MASK = calc_hash_mask(calc_num_bits(num_buckets));
@@ -79,13 +79,10 @@ private:
         uint32_t rand_idx = indices[rand() & (poss_buckets - 1)];
         for (uint32_t j = 0; j < max_kicks; j++) {
             fp = buckets[rand_idx].swap(fp);
-            uint32_t idx = calc_bucket_index(rand_idx, fp);
-            for (uint32_t k = 0; k < poss_buckets; k++) {
-                if (buckets[idx].insert(fp)) {
-                    curr_size++;
-                    return true;
-                }
-                idx = calc_bucket_index(idx, fp);
+            rand_idx = calc_bucket_index(rand_idx, fp);
+            if (buckets[rand_idx].insert(fp)) {
+                curr_size++;
+                return true;
             }
         }
         return false;

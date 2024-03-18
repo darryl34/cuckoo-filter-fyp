@@ -17,30 +17,43 @@ void write_to_file(const std::string& filename, const std::string& data) {
     }
 }
 
+std::string generate_message(int max_num_bkts, int bkt_size, int poss_bkts, float avg_lf) {
+    return std::to_string(max_num_bkts) + "," +
+           std::to_string(bkt_size) + "," +
+           std::to_string(poss_bkts) + "," + std::to_string(avg_lf);
+}
+
 template <int bkt_size, int max_num_bkts, int poss_bkts>
 struct create_cfs {
+    // insert as many elements as possible into the filter
+    static float calculate_load_factor(CuckooFilter<bkt_size, max_num_bkts, poss_bkts>& cf) {
+        for (uint32_t it = 0; it < max_num_bkts * bkt_size; it++) {
+            int res = cf.insert(it);
+            if (!res) {
+                break;
+            }
+        }
+        return cf.load_factor();
+    }
+
+    // get average of runs
+    static float calculate_average_load_factor() {
+        int runs = 10;
+        float avg_lf = 0;
+        for (int i = 0; i < runs; i++) {
+            static CuckooFilter<bkt_size, max_num_bkts, poss_bkts> cf;
+            cf.reset();
+            avg_lf += calculate_load_factor(cf);
+        }
+        return avg_lf / runs;
+    }
     
     static void instantiate(const std::string& filename) {
         std::cout << "Testing with " << max_num_bkts << " buckets, " << bkt_size << " bucket size, " << poss_bkts << " possible buckets" << std::endl;
 
-        float avg_lf = 0;
-        for (int i = 0; i < 10; i++) {
-            static CuckooFilter<bkt_size, max_num_bkts, poss_bkts> cf;
-            cf.reset();
-            for (uint32_t it = 0; it < max_num_bkts * bkt_size; it++) {
-                int res = cf.insert(it);
-                if (!res) {
-                    //std::cout << "Failed to insert " << i << std::endl;
-                    break;
-                }
-            }
-            avg_lf += cf.load_factor();
-        }
-        avg_lf /= 10;
+        float avg_lf = calculate_average_load_factor();
         std::cout << "Average load factor: " << avg_lf << std::endl;
-        std::string msg = std::to_string(max_num_bkts) + "," +
-                        std::to_string(bkt_size) + "," +
-                          std::to_string(poss_bkts) + "," + std::to_string(avg_lf);
+        std::string msg = generate_message(max_num_bkts, bkt_size, poss_bkts, avg_lf);
         write_to_file(filename, msg);
         create_cfs<bkt_size, (max_num_bkts << 1), poss_bkts>::instantiate(filename);
     }
@@ -60,8 +73,6 @@ int main() {
     srand(time(NULL));
     
     const uint32_t min_num_buckets = 1 << 10;
-    const uint32_t bucket_size = 2;
-    const uint32_t possible_buckets = 4;
     
     const std::string filename = "results.txt";
     std::ofstream file(filename);
