@@ -31,6 +31,9 @@ private:
     XXH32_hash_t _seed_fp;
     XXH32_hash_t _seed_idx;
 
+    // testing variables
+    uint32_t total_evictions;
+
 
  public:
     CuckooFilter() {
@@ -40,6 +43,7 @@ private:
         }
         _seed_fp = rand();
         _seed_idx = rand();
+        total_evictions = 0;
     }
 
     // Check if the filter contains an item
@@ -56,14 +60,15 @@ private:
     // Returns true if the item was inserted, false if the filter is full
     // (max_kicks exceeded)
     bool insert(uint32_t item) {
-        // if (contains(item)) { return true; }
+        // start our evictions counter
+        total_evictions = 0;
 
         uint32_t fp = fingerprint(item);
         uint32_t idx = index_hash(item);
         uint32_t indices[poss_buckets];
         for (uint32_t i = 0; i < poss_buckets; i++) {
             indices[i] = idx;
-            if (buckets[idx].contains(fp)) { return true; }
+            if (buckets[idx].contains(fp)) { return true; } // TODO: remove to support deletions
             if (buckets[idx].insert(fp)) {
                 curr_size++;
                 return true;
@@ -72,18 +77,17 @@ private:
         }
 
         // Pick a random bucket to evict an item from
-        //counter++;
-        //uint32_t r = XXH32(&counter, sizeof(counter), 0) % poss_buckets;
-        //std::cout << "Random bucket: " << r << std::endl;
-
         uint32_t rand_idx = indices[rand() & (poss_buckets - 1)];
+
         for (uint32_t j = 0; j < max_kicks; j++) {
             fp = buckets[rand_idx].swap(fp);
             rand_idx = calc_bucket_index(rand_idx, fp);
             if (buckets[rand_idx].insert(fp)) {
                 curr_size++;
+                total_evictions++;
                 return true;
             }
+            total_evictions++;
         }
         return false;
     }
@@ -197,6 +201,7 @@ private:
         }
     }
 
+    // Reset the filter
     void reset() {
         for (int i = 0; i < num_buckets; i++) {
             buckets[i].clear();
@@ -205,4 +210,10 @@ private:
         _seed_fp = rand();
         _seed_idx = rand();
     }
+
+    // Get the total number of evictions
+    uint32_t get_num_evictions() {
+        return total_evictions;
+    }
+
 };
