@@ -68,7 +68,7 @@ private:
         uint32_t indices[poss_buckets];
         for (uint32_t i = 0; i < poss_buckets; i++) {
             indices[i] = idx;
-            if (buckets[idx].contains(fp)) { return true; } // TODO: remove to support deletions
+            // if (buckets[idx].contains(fp)) { return true; } // TODO: remove to support deletions
             if (buckets[idx].insert(fp)) {
                 curr_size++;
                 return true;

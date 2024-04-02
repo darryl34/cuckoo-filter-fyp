@@ -11,7 +11,7 @@ int main() {
     srand(time(NULL));
 
     const uint32_t bkt_size = 4;
-    const uint32_t max_num_bkts = 1 << 10;
+    const uint32_t max_num_bkts = 1 << 12;
     const uint32_t poss_bkts = 4;
     static CuckooFilter<bkt_size, max_num_bkts, poss_bkts> cf;
 
@@ -33,7 +33,7 @@ int main() {
                 for (uint32_t j = it; j < max_num_bkts * bkt_size; j++) {
                     evictions[j] = 500; // TODO: change to max + 1?
                 }
-                std::cout << cf.load_factor() << std::endl;
+                // std::cout << cf.load_factor() << std::endl;
                 break;
             }
         }
@@ -48,6 +48,7 @@ int main() {
 
     std::ofstream file;
     file.open("evictions.txt");
+    std::cout << sizeof(avg_evictions) / sizeof(uint32_t) << std::endl;
     for (uint32_t i = 0; i < sizeof(avg_evictions) / sizeof(uint32_t); i++) {
         file << avg_evictions[i] << "\n";
     }
