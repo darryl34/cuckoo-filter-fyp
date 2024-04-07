@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <fstream>
 #include <string>
+#include <chrono>
+#include <tuple>
 
 #include "cuckoo.h"
 
@@ -17,43 +19,48 @@ void write_to_file(const std::string& filename, const std::string& data) {
     }
 }
 
-std::string generate_message(int max_num_bkts, int bkt_size, int poss_bkts, float avg_lf) {
-    return std::to_string(max_num_bkts) + "," +
-           std::to_string(bkt_size) + "," +
-           std::to_string(poss_bkts) + "," + std::to_string(avg_lf);
-} 
 
 template <int bkt_size, int max_num_bkts, int poss_bkts>
 struct create_cfs {
     // insert as many elements as possible into the filter
-    static float calculate_load_factor(CuckooFilter<bkt_size, max_num_bkts, poss_bkts>& cf) {
-        for (uint32_t it = 0; it < max_num_bkts * bkt_size; it++) {
+    static float measure_insert_speed(CuckooFilter<bkt_size, max_num_bkts, poss_bkts>& cf) {
+        uint32_t it = 0;
+        auto start = std::chrono::high_resolution_clock::now();
+        for (it = 0; it < max_num_bkts * bkt_size; it++) {
             int res = cf.insert(it);
             if (!res) {
                 break;
             }
         }
-        return cf.load_factor();
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        return it/(float)duration.count();
+        
     }
 
     // get average of runs
-    static float calculate_average_load_factor() {
+    static float calc_min_insert_speed() {
         int runs = 10;
-        float min_lf = 1;
+        float avg_throughput = 0;
+        int duration_ms;
         for (int i = 0; i < runs; i++) {
             static CuckooFilter<bkt_size, max_num_bkts, poss_bkts> cf;
             cf.reset();
-            min_lf = std::min(calculate_load_factor(cf), min_lf);
+            // std::cout << "Run " << i << std::endl;
+            avg_throughput += measure_insert_speed(cf);
         }
-        return min_lf;
+        return avg_throughput/runs;
     }
     
     static void instantiate(const std::string& filename) {
         std::cout << "Testing with " << max_num_bkts << " buckets, " << bkt_size << " bucket size, " << poss_bkts << " possible buckets" << std::endl;
 
-        float min_lf = calculate_average_load_factor();
-        std::cout << "Minimum load factor: " << min_lf << std::endl;
-        std::string msg = generate_message(max_num_bkts, bkt_size, poss_bkts, min_lf);
+        float avg_throughput = calc_min_insert_speed();
+        std::cout << "Average Throughput: " << avg_throughput << std::endl;
+        std::string msg = std::to_string(max_num_bkts) + "," +
+                          std::to_string(bkt_size) + "," +
+                          std::to_string(poss_bkts) + "," + 
+                          std::to_string(avg_throughput);
         write_to_file(filename, msg);
         create_cfs<bkt_size, (max_num_bkts << 1), poss_bkts>::instantiate(filename);
     }
@@ -62,21 +69,20 @@ struct create_cfs {
 template<int bkt_size, int poss_bkts>
 // base case    
 // num_buckets from any range to 1 << 21
-    struct create_cfs <bkt_size, 1 << 16, poss_bkts> {
+    struct create_cfs <bkt_size, 1 << 22, poss_bkts> {
     static void instantiate(const std::string& filename) {
         std::cout << "Done" << std::endl;
     }
 };
 
+
 int main() {
-    //static const std::vector<uint32_t> bkts = {1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576}; // 2^10 to 2^20
     srand(time(NULL));
-    
-    const uint32_t min_num_buckets = 1 << 10;
-    
-    const std::string filename = "test_lf.txt";
+    const uint32_t min_num_buckets = 1 << 14;
+
+    const std::string filename = "results/test_insert_speed.txt";
     std::ofstream file(filename);
-    file << "num_buckets,bucket_size,possible_buckets,load_factor" << std::endl;
+    file << "num_buckets,bucket_size,poss_buckets,avg_throughput" << std::endl;
 
     // bucket_size, min_num_buckets, possible_buckets
     create_cfs<2, min_num_buckets, 2>::instantiate(filename);
@@ -90,9 +96,4 @@ int main() {
     create_cfs<8, min_num_buckets, 2>::instantiate(filename);
     create_cfs<8, min_num_buckets, 4>::instantiate(filename);
     create_cfs<8, min_num_buckets, 8>::instantiate(filename);
-
-    create_cfs<16, min_num_buckets, 2>::instantiate(filename);
-    create_cfs<16, min_num_buckets, 4>::instantiate(filename);
-    create_cfs<16, min_num_buckets, 8>::instantiate(filename);
-
 }
