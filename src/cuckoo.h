@@ -12,12 +12,11 @@
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-template <int bucket_size, int num_buckets, int poss_buckets>
-
+template <int num_buckets, int poss_buckets, int bucket_size, typename item_type, typename fp_type>
 class CuckooFilter {
 private:
     // class variables
-    Bucket<bucket_size> buckets[num_buckets];  // Array of buckets
+    Bucket<bucket_size, item_type, fp_type> buckets[num_buckets];  // Array of buckets
     uint32_t curr_size = 0;
     static const uint32_t max_kicks = 500;
 
@@ -47,8 +46,8 @@ private:
     }
 
     // Check if the filter contains an item
-    bool contains(uint32_t item) {
-        uint32_t fp = fingerprint(item);
+    bool contains(item_type item) {
+        fp_type fp = fingerprint(item);
         uint32_t idx = calc_bucket_index(index_hash(item), fp);
         for (uint32_t i = 0; i < poss_buckets; i++) {
             if (buckets[idx].contains(fp)) { return true; }
@@ -59,11 +58,11 @@ private:
     // Insert an item into the filter
     // Returns true if the item was inserted, false if the filter is full
     // (max_kicks exceeded)
-    bool insert(uint32_t item) {
+    bool insert(item_type item) {
         // start our evictions counter
         total_evictions = 0;
 
-        uint32_t fp = fingerprint(item);
+        fp_type fp = fingerprint(item);
         uint32_t idx = index_hash(item);
         uint32_t indices[poss_buckets];
         for (uint32_t i = 0; i < poss_buckets; i++) {
@@ -88,13 +87,14 @@ private:
                 return true;
             }
             total_evictions++;
+            // std::cout << total_evictions << " ";
         }
         return false;
     }
 
   // Remove an item from the filter
-    bool remove(uint32_t item) {
-        uint32_t fp = fingerprint(item);
+    bool remove(item_type item) {
+        fp_type fp = fingerprint(item);
         for (uint32_t i = 0; i < poss_buckets; i++) {
             uint32_t idx = calc_bucket_index(index_hash(item), fp);
             if (buckets[idx].remove(fp)) {
@@ -105,16 +105,16 @@ private:
         return false;
     }
 
-    uint32_t fingerprint(uint32_t item) {
-        return XXH32(&item, sizeof(item), _seed_fp);
+    fp_type fingerprint(item_type item) {
+        XXH64_hash_t fp = XXH64(&item, sizeof(item), _seed_fp);
+        return fp & ((1 << sizeof(fp_type)) - 1);
     }
 
-    // (hashed & (num_buckets-1))
-    uint32_t index_hash(uint32_t item) {
+    uint32_t index_hash(item_type item) {
         return XXH32(&item, sizeof(item), _seed_idx) & (num_buckets - 1);
     }
 
-    uint32_t calc_bucket_index(uint32_t idx, uint32_t fp) {
+    uint32_t calc_bucket_index(uint32_t idx, fp_type fp) {
         uint32_t H = index_hash(fp);
         uint32_t i = 0;
 
@@ -207,8 +207,8 @@ private:
             buckets[i].clear();
         }
         curr_size = 0;
-        _seed_fp = rand();
-        _seed_idx = rand();
+        // _seed_fp = rand();
+        // _seed_idx = rand();
     }
 
     // Get the total number of evictions

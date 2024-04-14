@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-df = pd.read_csv('test_lf_vs_bktsize.txt')
+df = pd.read_csv('results/test_lf.txt')
 fig, ax = plt.subplots(2, 2, figsize=(12, 10))
 axes = ax.flatten()
 i = 0
@@ -19,5 +19,6 @@ for b in df['bucket_size'].unique():
 
 fig.suptitle('Load Factor vs Number of Buckets (max_kicks=500)')
 plt.legend()
-plt.savefig('lf_vs_bktsize.png')
+# plt.savefig('lf_vs_bktsize.png')
+plt.show()
 
