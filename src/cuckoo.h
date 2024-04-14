@@ -16,7 +16,7 @@ template <int num_buckets, int poss_buckets, int bucket_size, typename item_type
 class CuckooFilter {
 private:
     // class variables
-    Bucket<bucket_size, item_type, fp_type> buckets[num_buckets];  // Array of buckets
+    Bucket<bucket_size, fp_type> buckets[num_buckets];  // Array of buckets
     uint32_t curr_size = 0;
     static const uint32_t max_kicks = 500;
 
@@ -30,9 +30,6 @@ private:
     XXH32_hash_t _seed_fp;
     XXH32_hash_t _seed_idx;
 
-    // testing variables
-    uint32_t total_evictions;
-
 
  public:
     CuckooFilter() {
@@ -42,7 +39,6 @@ private:
         }
         _seed_fp = rand();
         _seed_idx = rand();
-        total_evictions = 0;
     }
 
     // Check if the filter contains an item
@@ -60,8 +56,6 @@ private:
     // (max_kicks exceeded)
     bool insert(item_type item) {
         // start our evictions counter
-        total_evictions = 0;
-
         fp_type fp = fingerprint(item);
         uint32_t idx = index_hash(item);
         uint32_t indices[poss_buckets];
@@ -83,11 +77,8 @@ private:
             rand_idx = calc_bucket_index(rand_idx, fp);
             if (buckets[rand_idx].insert(fp)) {
                 curr_size++;
-                total_evictions++;
                 return true;
             }
-            total_evictions++;
-            // std::cout << total_evictions << " ";
         }
         return false;
     }
@@ -107,7 +98,9 @@ private:
 
     fp_type fingerprint(item_type item) {
         XXH64_hash_t fp = XXH64(&item, sizeof(item), _seed_fp);
-        return fp & ((1 << sizeof(fp_type)) - 1);
+        // hacky way
+        if (sizeof(fp_type) == 4) {return fp; }
+        else {return fp & ((1 << sizeof(fp_type)*8) - 1);}
     }
 
     uint32_t index_hash(item_type item) {
@@ -207,13 +200,11 @@ private:
             buckets[i].clear();
         }
         curr_size = 0;
-        // _seed_fp = rand();
-        // _seed_idx = rand();
     }
 
-    // Get the total number of evictions
-    uint32_t get_num_evictions() {
-        return total_evictions;
+    void reset_seeds() {
+        _seed_fp = rand();
+        _seed_idx = rand();
     }
 
 };
