@@ -26,7 +26,7 @@ std::string generate_message(int max_num_bkts, int bkt_size, int poss_bkts, floa
 template <int num_bkts, int poss_bkts, int bkt_size>
 struct create_cfs {
     // insert as many elements as possible into the filter
-    static float calculate_load_factor(CuckooFilter<num_bkts, poss_bkts, bkt_size, uint32_t, uint32_t>& cf) {
+    static float calculate_load_factor(CuckooFilter<num_bkts, poss_bkts, bkt_size, uint32_t, uint16_t>& cf) {
         for (uint32_t it = 0; it < num_bkts * bkt_size; it++) {
             int res = cf.insert(it);
             if (!res) {
@@ -41,7 +41,7 @@ struct create_cfs {
         int runs = 10;
         float avg_lf = 0;
         for (int i = 0; i < runs; i++) {
-            static CuckooFilter<num_bkts, poss_bkts, bkt_size, uint32_t, uint32_t> cf;
+            static CuckooFilter<num_bkts, poss_bkts, bkt_size, uint32_t, uint16_t> cf;
             cf.reset();
             avg_lf += calculate_load_factor(cf);
         }
@@ -59,7 +59,7 @@ struct create_cfs {
     }
 };
 
-template<int bkt_size, int poss_bkts>
+template<int poss_bkts, int bkt_size>
 // limit range of num_buckets
     struct create_cfs <1 << 21, poss_bkts, bkt_size> {
     static void instantiate(const std::string& filename) {
@@ -75,23 +75,23 @@ int main() {
     
     const std::string filename = "../results/test_lf.txt";
     std::ofstream file(filename);
-    file << "num_buckets,bucket_size,possible_buckets,load_factor" << std::endl;
+    file << "num_buckets,possible_buckets,bucket_size,load_factor" << std::endl;
 
-    // min_num_buckets, possible_buckets, bucket_size, fp_size
+    // min_num_buckets, possible_buckets, bucket_size
     create_cfs<min_num_buckets, 2, 2>::instantiate(filename);
-    // create_cfs<min_num_buckets, 4, 2, 32>::instantiate(filename);
-    // create_cfs<min_num_buckets, 8, 2, 32>::instantiate(filename);
+    create_cfs<min_num_buckets, 4, 2>::instantiate(filename);
+    create_cfs<min_num_buckets, 8, 2>::instantiate(filename);
 
-    // create_cfs<min_num_buckets, 2, 4, 32>::instantiate(filename);
-    // create_cfs<min_num_buckets, 4, 4, 32>::instantiate(filename);
-    // create_cfs<min_num_buckets, 8, 4, 32>::instantiate(filename);
+    create_cfs<min_num_buckets, 2, 4>::instantiate(filename);
+    create_cfs<min_num_buckets, 4, 4>::instantiate(filename);
+    create_cfs<min_num_buckets, 8, 4>::instantiate(filename);
 
-    // create_cfs<min_num_buckets, 2, 8, 32>::instantiate(filename);
-    // create_cfs<min_num_buckets, 4, 8, 32>::instantiate(filename);
-    // create_cfs<min_num_buckets, 8, 8, 32>::instantiate(filename);
+    create_cfs<min_num_buckets, 2, 8>::instantiate(filename);
+    create_cfs<min_num_buckets, 4, 8>::instantiate(filename);
+    create_cfs<min_num_buckets, 8, 8>::instantiate(filename);
 
-    // create_cfs< min_num_buckets, 2, 16, 32>::instantiate(filename);
-    // create_cfs< min_num_buckets, 4, 16, 32>::instantiate(filename);
-    // create_cfs< min_num_buckets, 8, 16, 32>::instantiate(filename);
+    create_cfs< min_num_buckets, 2, 16>::instantiate(filename);
+    create_cfs< min_num_buckets, 4, 16>::instantiate(filename);
+    create_cfs< min_num_buckets, 8, 16>::instantiate(filename);
 
 }
