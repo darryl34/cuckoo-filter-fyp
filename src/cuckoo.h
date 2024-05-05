@@ -44,9 +44,10 @@ private:
     // Check if the filter contains an item
     bool contains(item_type item) {
         fp_type fp = fingerprint(item);
-        uint32_t idx = calc_bucket_index(index_hash(item), fp);
+        uint32_t idx = index_hash(item);
         for (uint32_t i = 0; i < poss_buckets; i++) {
             if (buckets[idx].contains(fp)) { return true; }
+            idx = calc_bucket_index(idx, fp);
         }
         return false;
     }
@@ -55,13 +56,11 @@ private:
     // Returns true if the item was inserted, false if the filter is full
     // (max_kicks exceeded)
     bool insert(item_type item) {
-        // start our evictions counter
         fp_type fp = fingerprint(item);
         uint32_t idx = index_hash(item);
         uint32_t indices[poss_buckets];
         for (uint32_t i = 0; i < poss_buckets; i++) {
             indices[i] = idx;
-            // if (buckets[idx].contains(fp)) { return true; } // TODO: remove to support deletions
             if (buckets[idx].insert(fp)) {
                 curr_size++;
                 return true;
@@ -86,12 +85,13 @@ private:
   // Remove an item from the filter
     bool remove(item_type item) {
         fp_type fp = fingerprint(item);
+        uint32_t idx = index_hash(item);
         for (uint32_t i = 0; i < poss_buckets; i++) {
-            uint32_t idx = calc_bucket_index(index_hash(item), fp);
             if (buckets[idx].remove(fp)) {
                 curr_size--;
                 return true;
             }
+            idx = calc_bucket_index(idx, fp);
         }
         return false;
     }
