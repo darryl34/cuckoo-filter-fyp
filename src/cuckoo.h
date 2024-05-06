@@ -56,6 +56,9 @@ private:
     // Returns true if the item was inserted, false if the filter is full
     // (max_kicks exceeded)
     bool insert(item_type item) {
+        if (curr_size >= num_buckets * bucket_size) {
+            return false;
+        }
         fp_type fp = fingerprint(item);
         uint32_t idx = index_hash(item);
         uint32_t indices[poss_buckets];
@@ -98,13 +101,12 @@ private:
 
     fp_type fingerprint(item_type item) {
         XXH64_hash_t fp = XXH64(&item, sizeof(item), _seed_fp);
-        // hacky way
-        if (sizeof(fp_type) == 4) {return fp; }
-        else {return fp & ((1 << sizeof(fp_type)*8) - 1);}
+        // cast 64-bit hash to needed precision
+        return static_cast<fp_type>(fp);
     }
 
     uint32_t index_hash(item_type item) {
-        return XXH32(&item, sizeof(item), _seed_idx) & (num_buckets - 1);
+        return XXH64(&item, sizeof(item), _seed_idx) & (num_buckets - 1);
     }
 
     uint32_t calc_bucket_index(uint32_t idx, fp_type fp) {
@@ -123,18 +125,9 @@ private:
         const uint32_t bkts_2_mask = 0b11111111111111111111111111111111;
         const uint32_t bkts_4_mask = 0b01010101010101010101010101010101;
         const uint32_t bkts_8_mask = 0b01001001001001001001001001001001;
-        uint32_t bit_mask;
+        uint32_t bit_mask = (1 << num_bkts_bits) - 1;
 
-        // if num_buckets is not a power of poss_buckets
-        // return bit mask with length that is a power of poss_buckets
-        if (is_pow_of_poss_bkts(num_buckets)) {
-            bit_mask = (1 << num_bkts_bits) - 1;
-        }
-        else {
-            bit_mask = (1 << (num_bkts_bits - (calc_num_bits(poss_buckets)-1))) - 1;
-        }
-
-        // slice the 32 bit mask to the number of bits needed
+        // mask to the number of bits needed
         if (poss_buckets == 2) {
             return bkts_2_mask & bit_mask;
         } else if (poss_buckets == 4) {
@@ -173,13 +166,6 @@ private:
             r++;
         }
         return r;
-    }
-
-    // Check if a number is a power of poss_buckets
-    bool is_pow_of_poss_bkts(int num) { 
-        if (num <= 0) { return false; } 
-        double res = log2(num) / log2(poss_buckets);
-        return res == (int)res;
     }
 
     double load_factor() {

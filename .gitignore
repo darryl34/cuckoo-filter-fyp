@@ -1,2 +1,3 @@
 unit-tests/build
 .vscode
+*.exe
