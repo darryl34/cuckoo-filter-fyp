@@ -16,18 +16,25 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
+# add test_bucket executable
 add_executable(
-  # test_bucket
-  # test_bucket.cc
+  test_bucket
+  test_bucket.cc
+)
+target_link_libraries(
+  test_bucket
+  GTest::gtest_main
+)
+
+add_executable(
   test_cuckoo
   test_cuckoo.cc
 )
 target_link_libraries(
-  # test_bucket
   test_cuckoo
   GTest::gtest_main
 )
 
 include(GoogleTest)
-# gtest_discover_tests(test_bucket)
+gtest_discover_tests(test_bucket)
 gtest_discover_tests(test_cuckoo)

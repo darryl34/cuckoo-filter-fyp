@@ -49,11 +49,23 @@ TEST_F(FilterTest, TestRemove) {
     EXPECT_TRUE(cf.load_factor() == 0);
 }
 
+// technically we are not allowed to remove non-existent items
 TEST_F(FilterTest, TestRemoveNonexistent) {
     uint32_t item = 123;
     EXPECT_FALSE(cf.remove(item));
 
 }
+
+TEST_F(FilterTest, TestRemoveDuplicate) {
+    uint32_t item = 123;
+    cf.insert(item);
+    cf.insert(item);
+    EXPECT_TRUE(cf.remove(item));
+    EXPECT_TRUE(cf.contains(item));
+    EXPECT_TRUE(cf.load_factor() == 1.0 / (FilterTest::num_buckets * FilterTest::bucket_size));
+}
+
+
 TEST_F(FilterTest, TestLoadFactor) {
     uint32_t to_insert = FilterTest::num_buckets * FilterTest::bucket_size / 2;
     for (uint32_t i = 0; i < to_insert; i++) {

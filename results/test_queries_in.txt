@@ -1,0 +1,3 @@
+num_buckets,poss_buckets,bucket_size,avg_query_half,avg_query_critical_pos,avg_query_critical_neg
+524288,2,2,43.868004,95.750008,151.089996
+524288,4,2,46.926003,111.297997,294.243988

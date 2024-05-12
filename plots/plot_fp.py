@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 df = pd.read_csv("results/test_fp.txt")
-plt.figure(figsize=(12, 10))
+plt.figure(figsize=(8, 6))
 
 size2 = df[df["bucket_size"] == 2]
 
@@ -15,7 +15,7 @@ for num_bkt in size2["num_buckets"].unique():
 plt.xlabel('Fingerprint Size (bits)')
 plt.xscale('log', base=2)
 plt.ylabel('Load Factor')
-plt.ylim(top=1)
+plt.ylim(top=1, bottom=0)
 plt.title('Load Factor vs Filter Size (bucket_size=2)')
 plt.legend()
 plt.show()

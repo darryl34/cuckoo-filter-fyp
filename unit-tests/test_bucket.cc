@@ -99,6 +99,32 @@ TEST(BucketTest, TestRemoveAfterInsertMultipleFalse) {
     ASSERT_FALSE(removeResult);
 }
 
+TEST(BucketTest, TestContainsAfterRemove) {
+    // Setup
+    Bucket<2, uint32_t> bucket;
+
+    // Exercise
+    bucket.insert(10);
+    bucket.remove(10);
+
+    // Verify
+    ASSERT_FALSE(bucket.contains(10));
+}
+
+TEST(BucketTest, TestContainsAfterRemoveMultiple) {
+    // Setup
+    Bucket<2, uint32_t> bucket;
+
+    // Exercise
+    bucket.insert(10);
+    bucket.insert(20);
+    bucket.remove(10);
+
+    // Verify
+    ASSERT_FALSE(bucket.contains(10));
+    ASSERT_TRUE(bucket.contains(20));
+}
+
 TEST(BucketTest, TestSwap) {
     // Setup
     Bucket<2, uint32_t> bucket;
@@ -111,4 +137,16 @@ TEST(BucketTest, TestSwap) {
     // Verify
     ASSERT_TRUE(swapResult == 10 || swapResult == 20);
     ASSERT_TRUE(bucket.contains(30));
+}
+
+TEST(BucketTest, TestIsFull) {
+    // Setup
+    Bucket<2, uint32_t> bucket;
+
+    // Exercise
+    bucket.insert(10);
+    bucket.insert(20);
+
+    // Verify
+    ASSERT_TRUE(bucket.is_full());
 }

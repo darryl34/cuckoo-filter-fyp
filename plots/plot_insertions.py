@@ -1,27 +1,31 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
-df = pd.read_csv("results/test_insert_speed.txt")
-fig, ax = plt.subplots(2, 1, figsize=(12, 14), sharey=True)
-axes = ax.flatten()
-i = 0
+from io import StringIO
 
-for i, b in enumerate(df["bucket_size"].unique()):
-    subset = df[df["bucket_size"] == b]
-    axes2 = axes[i].twinx()
-    for poss_b in subset["poss_buckets"].unique():
-        subsubset = subset[subset["poss_buckets"] == poss_b]
-        axes[i].plot(subsubset["num_buckets"]*b, subsubset["avg_throughput"]*1000, 
-                     marker='o', linestyle='--', label=f'possible_buckets={poss_b}')
-        axes2.plot(subsubset["num_buckets"]*b, subsubset["avg_lf"], 
-                     marker='.', linestyle='-.')
-    axes[i].set_xscale('log', base=2)
-    axes[i].set_title(f'bucket_size={b}')
-    axes[i].legend()
-    axes[i].set_ylabel('Insertions/ms')
-    axes2.set_ylabel('Load Factor')
-axes[i].set_xlabel('Filter size')
+# read data
+def process_file(filename):
+    with open(filename, "r") as f:
+        next(f)
+        data = f.read().split("Done\n")
+        arrs = []
+        for i in range(1, len(data)):
+            if len(data[i]) > 0:
+                arrs.append(pd.read_csv(StringIO(data[i]), sep=",", header=None).to_numpy())
+        min_cols = min([arr.shape[0] for arr in arrs])
+        arrs = [arr[:min_cols, :] for arr in arrs]
+        return np.mean(arrs, axis=0)
 
-fig.suptitle('Throughput (Insertions/ms)')
-# plt.savefig('insert_speed.png')
+mean_2d = process_file("results/test_insert_speed_2d.txt")
+mean_4d = process_file("results/test_insert_speed_4d.txt")
+mean_8d = process_file("results/test_insert_speed_8d.txt")
+
+plt.plot(mean_2d[:, 0], mean_2d[:, 1], label="d=2", marker="", linestyle="-")
+plt.plot(mean_4d[:, 0], mean_4d[:, 1], label="d=4", marker="", linestyle="--")
+plt.plot(mean_8d[:, 0], mean_8d[:, 1], label="d=8", marker="", linestyle=":")
+plt.xlabel("Load factor", fontsize=12)
+plt.ylabel("Insertions Throughput (thousands per ms)", fontsize=12)
+# plt.title("Throughput")
+plt.legend(fontsize=11)
 plt.show()

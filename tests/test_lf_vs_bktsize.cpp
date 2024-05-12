@@ -42,18 +42,19 @@ struct create_cfs {
         float avg_lf = 0;
         for (int i = 0; i < runs; i++) {
             static CuckooFilter<num_bkts, poss_bkts, bkt_size, uint32_t, uint16_t> cf;
-            cf.reset();
             avg_lf += calculate_load_factor(cf);
+            cf.reset();
+            cf.reset_seeds();
         }
         return avg_lf/runs;
     }
     
     static void instantiate(const std::string& filename) {
-        std::cout << "Testing with " << num_bkts << " buckets, " << bkt_size << " bucket size, " << poss_bkts << " possible buckets" << std::endl;
+        std::cout << "Testing with " << num_bkts << " buckets, " << poss_bkts << " possible buckets, " << bkt_size << " bucket size" << std::endl;
 
         float avg_lf = calculate_average_load_factor();
         std::cout << "Average load factor: " << avg_lf << std::endl;
-        std::string msg = generate_message(num_bkts, bkt_size, poss_bkts, avg_lf);
+        std::string msg = generate_message(num_bkts, poss_bkts, bkt_size, avg_lf);
         write_to_file(filename, msg);
         create_cfs<(num_bkts << 1), poss_bkts, bkt_size>::instantiate(filename);
     }
@@ -68,16 +69,19 @@ template<int poss_bkts, int bkt_size>
 };
 
 int main() {
-    //static const std::vector<uint32_t> bkts = {1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576}; // 2^10 to 2^20
     srand(time(NULL));
     
-    const uint32_t min_num_buckets = 1 << 12;
+    const uint32_t min_num_buckets = 1 << 15;
     
     const std::string filename = "../results/test_lf.txt";
     std::ofstream file(filename);
-    file << "num_buckets,possible_buckets,bucket_size,load_factor" << std::endl;
+    file << "num_buckets,poss_buckets,bucket_size,load_factor" << std::endl;
 
     // min_num_buckets, possible_buckets, bucket_size
+    create_cfs<min_num_buckets, 2, 1>::instantiate(filename);
+    create_cfs<min_num_buckets, 4, 1>::instantiate(filename);
+    create_cfs<min_num_buckets, 8, 1>::instantiate(filename);
+
     create_cfs<min_num_buckets, 2, 2>::instantiate(filename);
     create_cfs<min_num_buckets, 4, 2>::instantiate(filename);
     create_cfs<min_num_buckets, 8, 2>::instantiate(filename);
@@ -86,12 +90,8 @@ int main() {
     create_cfs<min_num_buckets, 4, 4>::instantiate(filename);
     create_cfs<min_num_buckets, 8, 4>::instantiate(filename);
 
-    create_cfs<min_num_buckets, 2, 8>::instantiate(filename);
-    create_cfs<min_num_buckets, 4, 8>::instantiate(filename);
-    create_cfs<min_num_buckets, 8, 8>::instantiate(filename);
-
-    create_cfs< min_num_buckets, 2, 16>::instantiate(filename);
-    create_cfs< min_num_buckets, 4, 16>::instantiate(filename);
-    create_cfs< min_num_buckets, 8, 16>::instantiate(filename);
+    // create_cfs<min_num_buckets, 2, 8>::instantiate(filename);
+    // create_cfs<min_num_buckets, 4, 8>::instantiate(filename);
+    // create_cfs<min_num_buckets, 8, 8>::instantiate(filename);
 
 }
