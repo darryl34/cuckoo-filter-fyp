@@ -7,7 +7,6 @@ protected:
     const uint32_t poss_buckets = 8;
     const uint32_t bucket_size = 2;
     
-    // TODO: investigate why we cant define with vars
     CuckooFilter<1 << 10, 8, 2, uint32_t, uint16_t> cf;
 
     void SetUp() override {

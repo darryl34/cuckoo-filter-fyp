@@ -12,6 +12,7 @@ This project implements the efficient d-ary cuckoo filter, and extends the works
 - `tests/`: Contains tests for various scenarios, `results/` contain results of the tests
 - `plots/`: Python scripts for generating plots of results
 - `unit-tests/`: Unit tests for the project
+- `python-prototype/`: Initial prototype developed in Python (not meant to represent the final implementation)
 
 ## Build
 
@@ -20,7 +21,9 @@ To build the example `example/test.cpp`:
 $ g++ test.cpp -o test.exe
 $ test
 ```
-The unit tests are built with Google Test. To build the tests:
+The unit tests are built with Google Test. 
+
+To build the tests:
 ```
 $ cd unit-tests
 $ cmake -S . -B build

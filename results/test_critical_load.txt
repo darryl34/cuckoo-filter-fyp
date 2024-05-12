@@ -1,3 +1,0 @@
-num_buckets,poss_buckets,bucket_size,avg_delete_time
-524288,2,2,132.468002
-524288,4,2,142.449997
